@@ -17,7 +17,11 @@ try {
     $db->exec("CREATE TABLE IF NOT EXISTS cases (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         case_id TEXT UNIQUE NOT NULL,
-        case_password TEXT NOT NULL
+        case_password TEXT NOT NULL,
+        case_name TEXT NOT NULL,
+        investigator TEXT NOT NULL,
+        status TEXT DEFAULT 'Open', -- 'Open' or 'Closed'
+        date_created DATETIME DEFAULT CURRENT_TIMESTAMP
     );");
 
     // A shared table that holds forensic results

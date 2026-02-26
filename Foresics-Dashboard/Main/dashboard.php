@@ -6,7 +6,7 @@ if (!isset($_SESSION['user_id'])) {
     header("Location: ../Login/login.php"); // Kick out people who aren't logged in
     exit();
 }
-
+/*
 // Trigger Python Script via Button
 $analysis_message = "";
 // Run it asynchronously to prevent system hangs
@@ -21,7 +21,7 @@ if (isset($_POST['run_analysis'])) {
         exec("python \"$scriptPath\" /dev/null 2>&1 &");
     }
     $analysis_message = "Analysis started in the background!";
-}
+}*/
 ?>
 
 <!DOCTYPE html>
@@ -61,8 +61,7 @@ if (isset($_POST['run_analysis'])) {
                     <div class="col-xl-3 col-md-6">
                         <div class="card bg-primary text-white mb-4">
                             <!-- Currently displays the active case id's but maybe we'll add a count -->
-                            <div class="card-body">Case: <?php echo htmlspecialchars($_SESSION['case_id']); ?></div>
-                            <!-- <div class="card-body">Active Cases</div> -->
+                            <div class="card-body">Active Case: <?php echo htmlspecialchars($_SESSION['case_id']); ?></div>
                         </div>
                     </div>
                     <div class="col-xl-3 col-md-6">

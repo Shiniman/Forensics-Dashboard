@@ -9,11 +9,13 @@ if (!isset($_SESSION["user_id"])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $case_id = trim($_POST["case_id"]);
     $case_password = password_hash($_POST["case_password"], PASSWORD_DEFAULT);
+    $case_name = trim($_POST["case_name"]);
+    $investigator = $_SESSION["user_id"]; // Autho-assign creator
 
-    if (!empty($case_id) && !empty($_POST["case_password"])) {
+    if (!empty($case_id) && !empty($_POST["case_password"]) && !empty($case_name)) {
         try {
-            $stmt = $db->prepare("INSERT INTO cases (case_id, case_password) VALUES (?, ?)");
-            $stmt->execute([$case_id, $case_password]);
+            $stmt = $db->prepare("INSERT INTO cases (case_id, case_password, case_name, investigator) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$case_id, $case_password, $case_name, $investigator]);
 
             // Redirect to USER case-login page
             header("Location: case-login.php");
@@ -53,7 +55,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <input class="form-control" name="case_id" type="text" required>
                             <label>Case ID</label>
                         </div>
-
+                        <div class="form-floating mb-3">
+                            <input class="form-control" name="case_name" type="text" required>
+                            <label>Case Name</label>
+                        </div>
                         <div class="form-floating mb-3">
                             <input class="form-control" name="case_password" type="password" required>
                             <label>Case Password</label>

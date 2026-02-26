@@ -1,19 +1,22 @@
 <?php
-session_start();
-// Checks if user_id is missing from session and redirects to login.php
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../Login/login.php"); // Kick out people who aren't logged in
-    exit();
-}
+    session_start();
+    require '../db.php';
+    // Checks if user_id is missing from session and redirects to login.php
+    if (!isset($_SESSION['user_id'])) {
+        header("Location: ../Login/login.php"); // Kick out people who aren't logged in
+        exit();
+    }
 
-// Trigger Python Script via Button
-$analysis_message = "";
-if (isset($_POST['run_analysis'])) {
-    $scriptPath = realpath(__DIR__ . '/../scripts/ingest_tools.py');
-    // Run python and capture errors
-    $output = shell_exec("python \"$scriptPath\" 2>&1");
-    $analysis_message = "Analysis Complete!";
-}
+    // Count Statistics
+    $total_cases = $db->query("SELECT COUNT(*) FROM cases")->fetchColumn();
+    $open_cases = $db->query("SELECT COUNT(*) FROM cases WHERE status = 'Open'")->fetchColumn();
+    $closed_cases = $db->query("SELECT COUNT(*) FROM cases WHERE status = 'Closed'")->fetchColumn();
+
+    // Fetch the current active case details
+    $active_id = $_SESSION['case_id'] ?? null;
+    $stmt = $db->prepare("SELECT * FROM cases WHERE case_id = ?");
+    $stmt->execute([$active_id]);
+    $current_case = $stmt->fetch(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -52,54 +55,58 @@ if (isset($_POST['run_analysis'])) {
                         <i class="fas fa-plus"></i> Add New Case
                     </button>
                 </div>
+                
+                <!-- Total, Open, and Completed Case Banner -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white mb-4">
+                            <div class="card-body">Total Cases: <?php echo $total_cases; ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white mb-4">
+                            <div class="card-body">Open Cases: <?php echo $open_cases; ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-secondary text-white mb-4">
+                            <div class="card-body">Completed: <?php echo $closed_cases; ?></div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- CASE TABLE -->
                 <div class="card mb-4">
-                    <div class="card-header">
-                        Active Cases
-                    </div>
+                    <div class="card-header">Current Active Case</div>
                     <div class="card-body">
                         <table id="datatablesSimple">
                             <thead>
                                 <tr>
-                                    <th>Case ID</th>
-                                    <th>Case Name</th>
-                                    <th>Lead Investigator</th>
-                                    <th>Date Opened</th>
-                                    <th>Status</th>
-                                    <th>Priority</th>
+                                    <th class="pe-4">Case ID</th>
+                                    <th class="pe-4">Case Name</th>
+                                    <th class="pe-4">Lead Investigator</th>
+                                    <th class="pe-4">Date Opened</th>
+                                    <th class="pe-4">Status</th>
+                                    <th class="pe-4">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php if ($current_case): ?>
                                 <tr>
-                                    <td>CASE-001</td>
-                                    <td>Corporate Data Breach</td>
-                                    <td>J. Smith</td>
-                                    <td>2026-01-28</td>
-                                    <td>Open</td>
-                                    <td>High</td>
+                                    <td><?php echo htmlspecialchars($current_case['case_id']); ?></td>
+                                    <td><?php echo htmlspecialchars($current_case['case_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($current_case['investigator']); ?></td>
+                                    <td><?php echo $current_case['date_created']; ?></td>
+                                    <td><span class="badge bg-primary"><?php echo $current_case['status']; ?></span></td>
+                                    <td><a href="../Login/case-login.php" class="btn btn-sm btn-warning">Switch Case</a></td>
                                 </tr>
-                                <tr>
-                                    <td>CASE-002</td>
-                                    <td>Unauthorized Server Access</td>
-                                    <td>A. Patel</td>
-                                    <td>2026-02-02</td>
-                                    <td>Investigating</td>
-                                    <td>Medium</td>
-                                </tr>
-                                <tr>
-                                    <td>CASE-003</td>
-                                    <td>Email Phishing Incident</td>
-                                    <td>L. Johnson</td>
-                                    <td>2026-02-05</td>
-                                    <td>Pending Evidence</td>
-                                    <td>Low</td>
-                                </tr>
+                                <?php else: ?>
+                                <tr><td colspan="5" class="text-center">No active case selected. <a href="../Login/case-login.php">Login here</a></td></tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
                 </div>
-
             </div>
         </main>
         <?php include '../includes/footer.php'; ?>
