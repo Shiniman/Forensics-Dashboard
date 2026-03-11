@@ -6,7 +6,7 @@
     $source = $_POST['source_program'];
     
     // Create an 'uploads' directory if it doesn't exist
-    $targetDir = "../uploads/";
+    $targetDir = realpath(__DIR__ . '/../uploads') . DIRECTORY_SEPARATOR;
     if (!file_exists($targetDir)) {
         mkdir($targetDir, 0777, true);
     }

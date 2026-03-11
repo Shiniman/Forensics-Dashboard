@@ -15,22 +15,62 @@
     $stmt_evidence->execute([$current_case]);
     $evidence_count = $stmt_evidence->fetchColumn();
 
+
+
     $analysis_message = "";
+    $analysis_status = "";
+    if (isset($_GET['analysis'])) {
+        switch ($_GET['analysis']) {
+            case 'started':
+                $analysis_status  = "info";
+                $analysis_message = "Analysis started for case <strong>" . htmlspecialchars($current_case) . "</strong>. Results will appear below as they are processed.";
+                break;
+            case 'config_error':
+                $analysis_status  = "danger";
+                $analysis_message = "Python path not configured. Create <code>config.ini</code> next to <code>database.db</code> with:<br><code>[python]<br>path = C:\...\python.exe</code>";
+                break;
+        }
+    }
 
     if (isset($_POST['run_analysis'])) {
         $case_id = $_SESSION['case_id'];
         $scriptPath = realpath(__DIR__ . '/../scripts/wireshark_parser.py');
 
         if ($scriptPath && file_exists($scriptPath)) {
-            // Run in background using the 'start /B' method to prevent DB locking
+            // IMPORTANT: Releases the PHP DB connection before Python starts writing.
+            // Keeping it open while Python runs has caused SQLite lock.
+            $db = null;
+
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                // Passing case_id as an argument to the python script
-                pclose(popen("start /B python \"$scriptPath\" \"$case_id\"", "r"));
-                $analysis_message = "Background analysis started for " . htmlspecialchars($case_id) . ". Refresh in a few seconds to see results.";
+                // XAMPP's Apache module doesn't contain the users python installation
+                // so the path is read through the config.ini file.
+                // All hardcoded locations should be in path for debugging purposes in the future.
+                $configPath = __DIR__ . '\\..\\..\\config.ini';
+                $config     = file_exists($configPath) ? parse_ini_file($configPath, true) : [];
+                $pythonPath = $config['python']['path'] ?? null;
+
+                $logDir  = __DIR__ . '\\..\\logs';
+                $logPath = $logDir . '\\parser.log';
+                if (!file_exists($logDir)) { mkdir($logDir, 0777, true); }
+
+                if (empty($pythonPath) || !file_exists($pythonPath)) {
+                    // Redirect with error flag so page loads as GET, not POST -> prevent loop
+                    header("Location: dashboard.php?analysis=config_error");
+                    exit();
+                } else {
+                    $cmd = "cmd /c start /B \"\" \"$pythonPath\" \"$scriptPath\" \"$case_id\" >> \"$logPath\" 2>&1";
+                    pclose(popen($cmd, "r"));
+                    // PRG pattern: redirect to GET so F5/reload never re-fires the POST
+                    header("Location: dashboard.php?analysis=started");
+                    exit();
+                }
             } else {
                 exec("python3 \"$scriptPath\" \"$case_id\" > /dev/null 2>&1 &");
-                $analysis_message = "Analysis started.";
+                $analysis_message = "Analysis started. Refresh in a few seconds to see results.";
             }
+
+            // Reconnect for the rest of the page render
+            require '../db.php';
         } else {
             $analysis_message = "Error: Python script not found at " . htmlspecialchars($scriptPath);
         }
@@ -121,6 +161,11 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
                         <?php endif; ?>
+
+                        <!-- Live parse status banner — shown/updated by JS polling -->
+                        <div id="parseStatusBanner" class="mt-3" style="display:none;">
+                            <div id="parseStatusInner" class="alert mb-0"></div>
+                        </div>
                     </div>
                 </div>
                 <!-- CHARTS -->
@@ -165,7 +210,9 @@
                             </thead>
                             <tbody>
                                 <?php
-                                    $results = $db->query("SELECT * FROM artifacts ORDER BY timestamp DESC");
+                                    $stmt = $db->prepare("SELECT * FROM artifacts WHERE case_id = ? ORDER BY timestamp DESC");
+                                    $stmt->execute([$current_case]);
+                                    $results = $stmt;
                                     while ($row = $results->fetch(PDO::FETCH_ASSOC)) {
                                         echo "<tr>";
                                         echo "<td>" . htmlspecialchars($row['id']) . "</td>";
@@ -193,6 +240,81 @@
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"></script>
 <script src="js/scripts.js"></script>
 <script src="js/datatables-simple-demo.js"></script>
+
+<script>
+(function () {
+    const banner     = document.getElementById('parseStatusBanner');
+    const inner      = document.getElementById('parseStatusInner');
+    const POLL_MS    = 3000;   // check every 3 seconds
+    let   pollTimer  = null;
+    let   wasRunning = false;
+
+    function statusLabel(data) {
+        switch (data.status) {
+            case 'processing':
+                return {
+                    cls: 'alert-info',
+                    icon: 'fas fa-spinner fa-spin',
+                    msg: `Analysing&hellip; <strong>${data.artifact_count.toLocaleString()}</strong> artifacts found so far.`
+                };
+            case 'done':
+                return {
+                    cls: 'alert-success',
+                    icon: 'fas fa-check-circle',
+                    msg: `Analysis complete &mdash; <strong>${data.artifact_count.toLocaleString()}</strong> artifacts extracted. Refreshing&hellip;`
+                };
+            case 'error':
+                return {
+                    cls: 'alert-danger',
+                    icon: 'fas fa-exclamation-triangle',
+                    msg: 'Analysis encountered an error. Check server logs.'
+                };
+            default:
+                return null;
+        }
+    }
+
+    function poll() {
+        fetch('../includes/check_status.php')
+            .then(r => r.json())
+            .then(data => {
+                const info = statusLabel(data);
+
+                if (!info) {
+                    // pending / none — nothing to show yet
+                    banner.style.display = 'none';
+                    return;
+                }
+
+                banner.style.display = 'block';
+                inner.className = 'alert mb-0 ' + info.cls;
+                inner.innerHTML = `<i class="${info.icon} me-2"></i>${info.msg}`;
+
+                if (data.status === 'processing') {
+                    wasRunning = true;
+                }
+
+                if (data.status === 'done' || data.status === 'error') {
+                    clearInterval(pollTimer);
+                    if (data.status === 'done') {
+                        // Give the user 2 seconds to read the message then reload
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                }
+            })
+            .catch(() => { /* network blip — keep polling */ });
+    }
+
+    // Auto-start polling if the page loaded right after hitting Run Analysis
+    <?php if (!empty($analysis_message)): ?>
+    banner.style.display = 'block';
+    inner.className = 'alert mb-0 alert-info';
+    inner.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting analysis&hellip;';
+    pollTimer = setInterval(poll, POLL_MS);
+    poll(); // immediate first check
+    <?php endif; ?>
+})();
+</script>
 
 </body>
 </html>

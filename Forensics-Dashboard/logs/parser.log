@@ -1,0 +1,33 @@
+[wireshark_parser] DB path     : E:\xampp\htdocs\Forensics-Dashboard\database.db
+[wireshark_parser] Project root: E:\xampp\htdocs\Forensics-Dashboard
+[wireshark_parser] Stored path : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] Resolved to : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] File exists : True
+[wireshark_parser] Parsing for case 'poop2'...
+[wireshark_parser] CSV columns detected: ['No.', 'Time', 'Source', 'Destination', 'Protocol', 'Length', 'Info']
+[wireshark_parser] Mapped to: {'source': 'Source', 'destination': 'Destination', 'protocol': 'Protocol', 'info': 'Info', 'time': 'Time'}
+[wireshark_parser] Done. 34 artifacts inserted for case 'poop2'.
+[wireshark_parser] DB path     : E:\xampp\htdocs\Forensics-Dashboard\database.db
+[wireshark_parser] Project root: E:\xampp\htdocs\Forensics-Dashboard
+[wireshark_parser] Stored path : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] Resolved to : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] File exists : True
+[wireshark_parser] Evidence ID 1 already parsed. Skipping.
+[wireshark_parser] DB path     : E:\xampp\htdocs\Forensics-Dashboard\database.db
+[wireshark_parser] Project root: E:\xampp\htdocs\Forensics-Dashboard
+[wireshark_parser] Stored path : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] Resolved to : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] File exists : True
+[wireshark_parser] Evidence ID 1 already parsed. Skipping.
+[wireshark_parser] DB path     : E:\xampp\htdocs\Forensics-Dashboard\database.db
+[wireshark_parser] Project root: E:\xampp\htdocs\Forensics-Dashboard
+[wireshark_parser] Stored path : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] Resolved to : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] File exists : True
+[wireshark_parser] Evidence ID 1 already parsed. Skipping.
+[wireshark_parser] DB path     : E:\xampp\htdocs\Forensics-Dashboard\database.db
+[wireshark_parser] Project root: E:\xampp\htdocs\Forensics-Dashboard
+[wireshark_parser] Stored path : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] Resolved to : E:\xampp\htdocs\Forensics-Dashboard\Forensics-Dashboard\uploads\1773199390_2023-01 - Copy.csv
+[wireshark_parser] File exists : True
+[wireshark_parser] Evidence ID 1 already parsed. Skipping.
